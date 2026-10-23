@@ -7,6 +7,7 @@ fn clear_screen() {
 }
 
 fn pause() {
+    println!("Aprete enter para continuar...");
     let mut number = String::new();
     let _ = io::stdin().read_line(&mut number);
 }
@@ -16,6 +17,7 @@ enum Jugada {
     Piedra,
     Papel,
     Tijera,
+    Salir,
 }
 
 impl Jugada {
@@ -61,9 +63,27 @@ fn leer_numero() -> u32 {
     number
 }
 
+fn leer_jugada() -> Option<Jugada> {
+    let mut jugada = String::new();
+    println!("Ingrese su jugada (Piedra,Papel o Tijera)");
+    println!("Puede salir escribiendo Salir");
+    io::stdin()
+        .read_line(&mut jugada)
+        .expect("Error al leer una linea");
+
+    let jugada: Option<Jugada> = match jugada.trim().to_uppercase().as_str() {
+        "PIEDRA" => Some(Jugada::Piedra),
+        "PAPEL" => Some(Jugada::Papel),
+        "TIJERA" => Some(Jugada::Tijera),
+        "SALIR" => Some(Jugada::Salir),
+        _ => None,
+    };
+
+    jugada
+}
+
 fn main() {
     let mut marcador: [u32; 3] = [0, 0, 0];
-
     loop {
         clear_screen();
         println!("Piedra | Papel | Tijera");
@@ -79,7 +99,6 @@ fn main() {
         }
 
         loop {
-            let mut jugada = String::new();
             let jugada_ia = rand::rng().random_range(1..=100);
 
             let jugada_ia: Jugada = match jugada_ia {
@@ -93,21 +112,15 @@ fn main() {
             };
             clear_screen();
             muestra_marcador(&marcador);
-            println!("Ingrese su jugada (Piedra,Papel o Tijera)");
-            println!("Puede salir escribiendo Salir");
-            io::stdin()
-                .read_line(&mut jugada)
-                .expect("Error al leer una linea");
+            let jugada = leer_jugada();
 
-            let jugada: Jugada = match jugada.trim().to_uppercase().as_str() {
-                "PIEDRA" => Jugada::Piedra,
-                "PAPEL" => Jugada::Papel,
-                "TIJERA" => Jugada::Tijera,
-                "SALIR" => {
+            let jugada: Jugada = match jugada {
+                Some(Jugada::Salir) => {
                     println!("Fin del juego");
                     return;
                 }
-                _ => {
+                Some(x) => x,
+                None => {
                     println!("Jugada inválida, vuelva a intentarlo");
                     continue;
                 }
