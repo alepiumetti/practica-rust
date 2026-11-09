@@ -10,10 +10,10 @@ struct Tarea {
 }
 
 impl Tarea {
-    fn nueva(&self, descripcion: String) {
-        // self.descripcion = descripcion;
-        // self.completada = false;
-    }
+    // fn nueva(&self, descripcion: String) {
+    //     // self.descripcion = descripcion;
+    //     // self.completada = false;
+    // }
     fn completar_tarea(&mut self) {
         self.completada = true;
     }
@@ -21,6 +21,13 @@ impl Tarea {
         self.completada
     }
 }
+
+enum VistaTareas {
+    Completadas,
+    Todas,
+    Incompletas,
+}
+
 #[derive(Debug)]
 enum Accion {
     Agregar,
@@ -48,47 +55,135 @@ fn agregar_tarea(lista: &mut [Tarea], cantidad: &mut usize, descripcion: String)
         pause();
         return;
     }
-    println!("cantidad: {}", *cantidad);
-
     lista[*cantidad].descripcion = descripcion;
-    // tarea.descripcion = descripcion;
-    // tarea.completada = false;
-
-    // &lista[*cantidad] = &mut tarea;
     *cantidad += 1;
 
     pause();
 }
-// fn completar_tarea(lista: &[Option<&mut Tarea>; 10], numero: usize) {
-//     let tarea: &Option<&mut Tarea> = &lista[numero];
-//     match tarea {
-//         Some(x) => **x.completar_tarea(),
-//         None => return, // None => println!("No es posible completar una tarea que no existe"),
-//     };
-// }
+fn completar_tarea(lista: &mut [Tarea; 10]) {
+    loop {
+        clear_screen();
+        ver_lista(lista, VistaTareas::Incompletas);
+        io::stdout().flush().unwrap();
+        print!("Ingrese la tarea que quiere completar:");
+        let mut tarea = String::new();
+        io::stdin()
+            .read_line(&mut tarea)
+            .expect("Error al leer linea");
+
+        let tarea: usize = match tarea.trim().parse() {
+            Ok(i) => i,
+            Err(..) => {
+                println!("Debe ingresar un número entero");
+                continue;
+            }
+        };
+        if !(0..10).contains(&tarea) {
+            println!("Debe ingresar un número entre 0 y 9 que son las tareas disponibles");
+            continue;
+        };
+
+        if lista[tarea].descripcion.is_empty() {
+            println!("Seleccione una tarea inicializada");
+            continue;
+        }
+
+        if lista[tarea].es_completada() {
+            println!("La tarea ya está completa");
+            continue;
+        } else {
+            let _ = &lista[tarea].completar_tarea();
+            println!("Tarea {tarea} completada");
+            pause();
+            break;
+        }
+    }
+}
+
+fn eliminar_tarea(lista: &mut [Tarea; 10]) {
+    loop {
+        clear_screen();
+        ver_lista(lista, VistaTareas::Todas);
+        io::stdout().flush().unwrap();
+        print!("Ingrese la tarea que quiere eliminar:");
+        let mut tarea = String::new();
+        io::stdin()
+            .read_line(&mut tarea)
+            .expect("Error al leer linea");
+
+        let tarea: usize = match tarea.trim().parse() {
+            Ok(i) => i,
+            Err(..) => {
+                println!("Debe ingresar un número entero");
+                pause();
+                continue;
+            }
+        };
+        if !(0..10).contains(&tarea) {
+            println!("Debe ingresar un número entre 0 y 9 que son las tareas disponibles");
+            pause();
+            continue;
+        };
+
+        if lista[tarea].descripcion.is_empty() {
+            println!("Debe ingresar una tarea que esté ingresada");
+            pause();
+            continue;
+        } else {
+            lista[tarea].descripcion = String::new();
+            lista[tarea].completada = false;
+            println!("Tarea {tarea} eliminada");
+            pause();
+            break;
+        }
+    }
+}
 
 // Función para ver la lista de las tareas
 // Recibe prestada la lista de tareas
-fn ver_lista(lista: &[Tarea; 10]) {
+fn ver_lista(lista: &[Tarea; 10], tipo_vista: VistaTareas) {
     if lista.is_empty() {
         println!("La lista está vacía");
         pause();
         return;
     }
 
-    for (index, item) in lista.iter().enumerate() {
-        if item.es_completada() {
-            print!("{} - ✅{}", index, item.descripcion);
-        } else {
-            if item.descripcion.is_empty() {
-                println!("{} - ❎{}", index, item.descripcion);
-            } else {
-                print!("{} - ❎{}", index, item.descripcion);
+    match tipo_vista {
+        VistaTareas::Completadas => {
+            for (index, item) in lista.iter().enumerate() {
+                if item.es_completada() {
+                    print!("{} - ✅{}", index, item.descripcion);
+                }
+                io::stdout().flush().unwrap();
             }
-        };
-        io::stdout().flush().unwrap();
+        }
+        VistaTareas::Incompletas => {
+            for (index, item) in lista.iter().enumerate() {
+                if !item.es_completada() {
+                    if item.descripcion.is_empty() {
+                        println!("{} - ❎{}", index, item.descripcion);
+                    } else {
+                        print!("{} - ❎{}", index, item.descripcion);
+                    }
+                };
+                io::stdout().flush().unwrap();
+            }
+        }
+        VistaTareas::Todas => {
+            for (index, item) in lista.iter().enumerate() {
+                if item.es_completada() {
+                    print!("{} - ✅{}", index, item.descripcion);
+                } else {
+                    if item.descripcion.is_empty() {
+                        println!("{} - ❎{}", index, item.descripcion);
+                    } else {
+                        print!("{} - ❎{}", index, item.descripcion);
+                    }
+                };
+                io::stdout().flush().unwrap();
+            }
+        }
     }
-    pause();
 }
 
 // Función de menú
@@ -175,24 +270,16 @@ fn main() {
         match accion {
             // en base a la acción se ejecutan los métodos
             Accion::Salir => break,
-            Accion::Eliminar => {
-                println!("Eliminar tarea");
-                // eliminar_tarea(lista, numero)
-            }
+            Accion::Eliminar => eliminar_tarea(&mut lista),
             Accion::Completar => {
-                println!("Completar tarea");
-                // let tarea = &mut lista[0];
-                // tarea.completar_tarea();
-
-                // completar_tarea(&lista, 0);
+                completar_tarea(&mut lista);
             }
             Accion::Listar => {
-                println!("Listar tareas");
-                ver_lista(&lista)
+                ver_lista(&lista, VistaTareas::Todas);
+                pause();
             }
             Accion::Agregar => {
-                println!("Agregar tarea");
-
+                clear_screen();
                 print!("Ingrese una descripción de la tarea:");
                 io::stdout().flush().unwrap();
                 let mut descripcion = String::new();
