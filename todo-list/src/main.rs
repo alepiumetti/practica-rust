@@ -3,16 +3,23 @@ use std::{
     process,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Tarea {
     descripcion: String,
     completada: bool,
 }
 
 impl Tarea {
-    fn nueva(descripcion: String) {}
-    fn completar_tarea(&mut self) {}
-    fn es_completada(&self) {}
+    fn nueva(&self, descripcion: String) {
+        // self.descripcion = descripcion;
+        // self.completada = false;
+    }
+    fn completar_tarea(&mut self) {
+        self.completada = true;
+    }
+    fn es_completada(&self) -> bool {
+        self.completada
+    }
 }
 #[derive(Debug)]
 enum Accion {
@@ -22,32 +29,62 @@ enum Accion {
     Salir,
     Eliminar,
 }
-
+// Función para borrar la pantalla
 fn clear_screen() {
     process::Command::new("clear").status().unwrap();
 }
 
+// Pausa en espera de que se aprete un boton
 fn pause() {
+    print!("Aprete enter para continuar...");
+    io::stdout().flush().unwrap();
     let mut number = String::new();
     let _ = io::stdin().read_line(&mut number);
 }
-fn eliminar_tarea(lista: Option<Tarea>, numero: u32) {}
-fn agregar_tarea(lista: &mut [Option<Tarea>; 10], cantidad: &mut usize, descripcion: String) {
+// fn eliminar_tarea(lista: [Tarea], numero: u32) {}
+fn agregar_tarea(&mut lista: [Tarea; 10], cantidad: &mut usize, descripcion: String) {
     if *cantidad >= 10 {
+        println!("Límite de tareas alcanzado.");
+        pause();
+        return;
+    }
+    println!("cantidad: {}", *cantidad);
+
+    let tarea = lista[*cantidad];
+    tarea.descripcion = descripcion;
+    tarea.completada = false;
+
+    // &lista[*cantidad] = &mut tarea;
+    *cantidad += 1;
+
+    pause();
+}
+// fn completar_tarea(lista: &[Option<&mut Tarea>; 10], numero: usize) {
+//     let tarea: &Option<&mut Tarea> = &lista[numero];
+//     match tarea {
+//         Some(x) => **x.completar_tarea(),
+//         None => return, // None => println!("No es posible completar una tarea que no existe"),
+//     };
+// }
+fn ver_lista(lista: [&mut Tarea; 10]) {
+    if lista.is_empty() {
+        println!("La lista está vacía");
+        pause();
         return;
     }
 
-    println!("cantidad: {}", *cantidad);
-
-    let tarea = Tarea {
-        descripcion: descripcion,
-        completada: false,
-    };
+    for (index, item) in lista.iter().enumerate() {
+        if item.es_completada() {
+            print!("{} - ✅{}", index, item.descripcion);
+        } else {
+            print!("{} - ❎{}", index, item.descripcion);
+        };
+        io::stdout().flush().unwrap();
+    }
+    pause();
 }
-fn completar_tarea(lista: [Option<Tarea>; 10], numero: u32) {}
-fn ver_lista(lista: &mut [Option<Tarea>; 10]) {}
 
-fn menu() -> Accion {
+fn menu() -> Option<Accion> {
     println!("---ToDo---");
     println!("- (A)gregar\n- (L)istar\n- (C)ompletar\n- (E)liminar\n- (S)alir");
     print!("Ingrese una opción:");
@@ -57,27 +94,78 @@ fn menu() -> Accion {
         .read_line(&mut accion)
         .expect("Error al leer linea");
 
-    let accion: Accion = match accion.trim().to_uppercase().as_str() {
-        "A" => Accion::Agregar,
-        "L" => Accion::Listar,
-        "C" => Accion::Completar,
-        "E" => Accion::Eliminar,
-        "S" => Accion::Salir,
-        _ => Accion::Salir,
+    let accion: Option<Accion> = match accion.trim().to_uppercase().as_str() {
+        "A" => Some(Accion::Agregar),
+        "L" => Some(Accion::Listar),
+        "C" => Some(Accion::Completar),
+        "E" => Some(Accion::Eliminar),
+        "S" => Some(Accion::Salir),
+        _ => None,
     };
 
     accion
 }
 
 fn main() {
-    let mut lista: [Option<Tarea>; 10];
+    // Array con todas las tareas
+    let mut lista: [Tarea; 10] = [
+        Tarea {
+            descripcion: String::new(),
+            completada: false,
+        },
+        Tarea {
+            descripcion: String::new(),
+            completada: false,
+        },
+        Tarea {
+            descripcion: String::new(),
+            completada: false,
+        },
+        Tarea {
+            descripcion: String::new(),
+            completada: false,
+        },
+        Tarea {
+            descripcion: String::new(),
+            completada: false,
+        },
+        Tarea {
+            descripcion: String::new(),
+            completada: false,
+        },
+        Tarea {
+            descripcion: String::new(),
+            completada: false,
+        },
+        Tarea {
+            descripcion: String::new(),
+            completada: false,
+        },
+        Tarea {
+            descripcion: String::new(),
+            completada: false,
+        },
+        Tarea {
+            descripcion: String::new(),
+            completada: false,
+        },
+    ];
+    // cantidad de tareas agregadas
     let mut cantidad: usize = 0;
 
     loop {
-        clear_screen();
-        let accion: Accion = menu();
-
+        clear_screen(); // Helper de limpieza de pantalla
+        let accion: Option<Accion> = menu(); // Abre el menú y en guarda la acción
+        let accion: Accion = match accion {
+            //Si la acción no es válida vuelve a empezar el loop
+            Some(x) => x,
+            None => {
+                println!("Error al iniciarlizar acción");
+                continue;
+            }
+        };
         match accion {
+            // en base a la acción se ejecutan los métodos
             Accion::Salir => break,
             Accion::Eliminar => {
                 println!("Eliminar tarea");
@@ -85,22 +173,26 @@ fn main() {
             }
             Accion::Completar => {
                 println!("Completar tarea");
-                // completar_tarea(lista, numero)
+                let tarea = &mut lista[0];
+                tarea.completar_tarea();
+
+                // completar_tarea(&lista, 0);
             }
             Accion::Listar => {
                 println!("Listar tareas");
-                // ver_lista(&mut lista)
+                // ver_lista(&lista)
             }
             Accion::Agregar => {
                 println!("Agregar tarea");
 
+                print!("Ingrese una descripción de la tarea:");
+                io::stdout().flush().unwrap();
                 let mut descripcion = String::new();
                 io::stdin()
                     .read_line(&mut descripcion)
                     .expect("Error al leer descripcion");
-                agregar_tarea(&mut lista, &mut cantidad, descripcion)
+                agregar_tarea(lista, &mut cantidad, descripcion)
             }
-            _ => println!("Error al inicializar acción"),
         }
     }
 }
