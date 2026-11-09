@@ -42,7 +42,7 @@ fn pause() {
     let _ = io::stdin().read_line(&mut number);
 }
 // fn eliminar_tarea(lista: [Tarea], numero: u32) {}
-fn agregar_tarea(&mut lista: [Tarea; 10], cantidad: &mut usize, descripcion: String) {
+fn agregar_tarea(lista: &mut [Tarea], cantidad: &mut usize, descripcion: String) {
     if *cantidad >= 10 {
         println!("Límite de tareas alcanzado.");
         pause();
@@ -50,9 +50,9 @@ fn agregar_tarea(&mut lista: [Tarea; 10], cantidad: &mut usize, descripcion: Str
     }
     println!("cantidad: {}", *cantidad);
 
-    let tarea = lista[*cantidad];
-    tarea.descripcion = descripcion;
-    tarea.completada = false;
+    lista[*cantidad].descripcion = descripcion;
+    // tarea.descripcion = descripcion;
+    // tarea.completada = false;
 
     // &lista[*cantidad] = &mut tarea;
     *cantidad += 1;
@@ -66,7 +66,10 @@ fn agregar_tarea(&mut lista: [Tarea; 10], cantidad: &mut usize, descripcion: Str
 //         None => return, // None => println!("No es posible completar una tarea que no existe"),
 //     };
 // }
-fn ver_lista(lista: [&mut Tarea; 10]) {
+
+// Función para ver la lista de las tareas
+// Recibe prestada la lista de tareas
+fn ver_lista(lista: &[Tarea; 10]) {
     if lista.is_empty() {
         println!("La lista está vacía");
         pause();
@@ -77,13 +80,18 @@ fn ver_lista(lista: [&mut Tarea; 10]) {
         if item.es_completada() {
             print!("{} - ✅{}", index, item.descripcion);
         } else {
-            print!("{} - ❎{}", index, item.descripcion);
+            if item.descripcion.is_empty() {
+                println!("{} - ❎{}", index, item.descripcion);
+            } else {
+                print!("{} - ❎{}", index, item.descripcion);
+            }
         };
         io::stdout().flush().unwrap();
     }
     pause();
 }
 
+// Función de menú
 fn menu() -> Option<Accion> {
     println!("---ToDo---");
     println!("- (A)gregar\n- (L)istar\n- (C)ompletar\n- (E)liminar\n- (S)alir");
@@ -173,14 +181,14 @@ fn main() {
             }
             Accion::Completar => {
                 println!("Completar tarea");
-                let tarea = &mut lista[0];
-                tarea.completar_tarea();
+                // let tarea = &mut lista[0];
+                // tarea.completar_tarea();
 
                 // completar_tarea(&lista, 0);
             }
             Accion::Listar => {
                 println!("Listar tareas");
-                // ver_lista(&lista)
+                ver_lista(&lista)
             }
             Accion::Agregar => {
                 println!("Agregar tarea");
@@ -191,7 +199,7 @@ fn main() {
                 io::stdin()
                     .read_line(&mut descripcion)
                     .expect("Error al leer descripcion");
-                agregar_tarea(lista, &mut cantidad, descripcion)
+                agregar_tarea(&mut lista, &mut cantidad, descripcion)
             }
         }
     }
